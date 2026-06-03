@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.2] — 2026-06-03
+
+Marketplace-readiness patch. No functional or API changes — safe drop-in
+upgrade from 3.0.0.
+
+### Fixed
+
+* **Replaced `md5()` with `hash('sha256', …)`** for ETag generation in the
+  file-serving controller. The Magento Coding Standard forbids `md5()`; the
+  ETag only needs to be stable and unique, so the switch is behaviour-neutral.
+* **Removed error-silencing `@` operators** from filesystem calls
+  (`fopen` / `flock` / `fclose`) in the atomic-write lock helper and in the
+  validate command. Return values were already checked explicitly, so
+  dropping `@` changes no behaviour while clearing the coding-standard errors.
+
+### Changed
+
+* **Dependency constraints pinned to real 2.4.x major lines.** `require` now
+  uses caret ranges matching the actual published modules — notably
+  `magento/module-url-rewrite: ^102.0` (the 101.2 line never existed). This
+  resolves a `composer require` failure on clean 2.4.8 installs.
+* Added an explicit `version` field (`3.0.1`) to `composer.json` so the
+  package version matches the Marketplace submission form.
+
+---
+
 ## [3.0.0] — 2026-05-23
 
 A full rebuild against the architectural review of 2.1.4. This release is
@@ -69,9 +95,9 @@ migration steps.
   the next tick so admins don't have to wait through a synchronous generation.
 * **Live admin status panel** polling `/angeo_llms/status/index` every 60s.
 * **Three CLI commands**:
-    * `bin/magento angeo:llms:generate [--store=…] [--no-jsonl] [--no-llms] [--no-full]`
-    * `bin/magento angeo:llms:status`
-    * `bin/magento angeo:llms:validate [--store=…]`
+  * `bin/magento angeo:llms:generate [--store=…] [--no-jsonl] [--no-llms] [--no-full]`
+  * `bin/magento angeo:llms:status`
+  * `bin/magento angeo:llms:validate [--store=…]`
 * **JSONL JSON-Schema** at `etc/jsonl-schema.json` for downstream pipelines.
 * **Events**: `angeo_llms_generation_before`, `angeo_llms_generation_after`,
   `angeo_llms_generation_failed` — for custom hooks.
