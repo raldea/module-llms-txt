@@ -30,6 +30,7 @@ class HtmlFilter implements SanitizerFilterInterface
 
         $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $content = preg_replace('/<style[^>]*>.*?<\/style>/is', ' ', $content) ?? $content;
+        $content = preg_replace('/<\/?(?:p|div|span|br|li|ul|ol|h[1-6]|blockquote|section|article|header|footer|tr|td|th)[^>]*>/i', ' ', $content) ?? $content;
         $content = strip_tags($content);
         $content = preg_replace(['/\{\{.*?\}\}/s', '/\[.*?\]/s'], ' ', $content) ?? $content;
         $content = str_replace(['#html-body', '&nbsp;'], ['', ' '], $content);

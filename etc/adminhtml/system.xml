@@ -197,6 +197,19 @@
                 </field>
             </group>
 
+            <!-- ─── URL ─── -->
+            <group id="url" translate="label" sortOrder="25"
+                   showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>URL</label>
+
+                <field id="append_store_code" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Append Store Code to URL</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>When enabled, the store code is appended to the base URL for llms.txt links (e.g. /gscaes). Disable when the store base URL already contains a unique path segment.</comment>
+                </field>
+            </group>
+
             <!-- ─── Performance ─── -->
             <group id="performance" translate="label" sortOrder="50"
                    showInDefault="1" showInWebsite="0" showInStore="0">

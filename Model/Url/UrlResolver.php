@@ -9,8 +9,10 @@ declare(strict_types=1);
 namespace Angeo\LlmsTxt\Model\Url;
 
 use Angeo\LlmsTxt\Api\UrlResolverInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Store\Api\StoreRepositoryInterface;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\UrlRewrite\Model\UrlRewrite;
@@ -39,10 +41,13 @@ class UrlResolver implements UrlResolverInterface
     /** @var array<int, string>  storeId → base URL (for absolute URL assembly) */
     private array $baseUrls = [];
 
+    private const XML_PATH_APPEND_STORE_CODE = 'angeo_llms/url/append_store_code';
+
     public function __construct(
         private readonly ResourceConnection $resourceConnection,
         private readonly StoreRepositoryInterface $storeRepository,
-        private readonly StoreManagerInterface $storeManager
+        private readonly StoreManagerInterface $storeManager,
+        private readonly ScopeConfigInterface $scopeConfig
     ) {
     }
 
@@ -124,11 +129,19 @@ class UrlResolver implements UrlResolverInterface
             $store = $this->storeRepository->getById($storeId);
             $base  = rtrim((string) $store->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_WEB), '/');
 
-            $defaultStore   = $this->storeManager->getDefaultStoreView();
-            $defaultStoreId = $defaultStore ? (int) $defaultStore->getId() : null;
+            $appendStoreCode = $this->scopeConfig->isSetFlag(
+                self::XML_PATH_APPEND_STORE_CODE,
+                ScopeInterface::SCOPE_STORE,
+                $storeId
+            );
 
-            if ($storeId !== $defaultStoreId) {
-                $base .= '/' . $store->getCode();
+            if ($appendStoreCode) {
+                $defaultStore   = $this->storeManager->getDefaultStoreView();
+                $defaultStoreId = $defaultStore ? (int) $defaultStore->getId() : null;
+
+                if ($storeId !== $defaultStoreId) {
+                    $base .= '/' . $store->getCode();
+                }
             }
 
             return $base;

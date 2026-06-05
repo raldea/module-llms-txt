@@ -39,6 +39,9 @@
             <cron>
                 <schedule>0 2 * * *</schedule>
             </cron>
+            <url>
+                <append_store_code>1</append_store_code>
+            </url>
         </angeo_llms>
         <crontab>
             <default>
