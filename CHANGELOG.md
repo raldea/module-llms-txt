@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.5] — 2026-06-04
+
+Admin-config bugfix. Safe drop-in upgrade from 3.0.x.
+
+### Fixed
+
+* **System Config "Save Config" no longer throws `Cannot read properties of
+  undefined (reading 'settings')`.** The `Generate` button `frontend_model`
+  template (`generate_button.phtml`) rendered two `<form>` elements *inside*
+  the admin system-config form (`#config-edit-form`). Nested forms are invalid
+  HTML: the browser re-parents the inner inputs/buttons onto the outer form, so
+  on Save the jQuery validator (`jquery.validate.js metadataRules`) iterated an
+  orphaned submit button that has no rule metadata and crashed, aborting the
+  whole submit. The buttons are now plain `type="button"` elements that POST via
+  a JS-built form appended to `<body>` (outside the config form). CSRF
+  protection is unchanged — the form key is still submitted.
+
+---
+
+Install-blocking bugfix plus PHP 8.5 support. Safe drop-in upgrade from 3.0.x.
+
+### Fixed
+
+* **`setup:upgrade` no longer fails XSD validation** on `etc/adminhtml/system.xml`.
+  Two `<comment>` elements (`cache_ttl_seconds` and `schedule`) contained raw
+  `<code>` HTML without a CDATA wrapper. `system_file.xsd` only allows a `model`
+  child inside `<comment>`, so the literal markup tripped
+  `Element 'code': This element is not expected. Expected is ( model )` and
+  aborted module loading. Both comments are now wrapped in `<![CDATA[ … ]]>`,
+  matching every other HTML-bearing comment in the file.
+
+### Changed
+
+* **Added PHP 8.5 to the supported range** (`…||~8.5.0`). Intended for Magento
+  2.4.9+, which is the first line to support PHP 8.5; on 2.4.8 and earlier,
+  PHP 8.4 remains the recommended runtime.
+
+---
+
+Admin-config bugfix. No functional or API changes — safe drop-in upgrade
+from 3.0.x.
+
+### Fixed
+
+* **System Config "Save Config" no longer throws a JS `TypeError`.** Three
+  numeric fields in `etc/adminhtml/system.xml` declared validation classes
+  that are not registered in Magento's `mage/validation` ruleset
+  (`validate-greater-than-zero` and `integer`). On 2.4.8-p4 the admin form
+  validator (`jquery.validate.js` `metadataRules`) looks up
+  `settings` on each rule object; the missing rules resolved to `undefined`,
+  producing `Cannot read properties of undefined (reading 'settings')` and
+  aborting the entire form submit. Replaced with registered rules:
+  * `collection_page_size`: → `validate-digits validate-digits-range digits-range-0-1000000`
+  * `product_limit`: → `validate-digits`
+  * `cache_ttl_seconds`: → `validate-digits`
+
+---
+
 ## [3.0.4] — 2026-06-03
 
 Compatibility patch. No functional or API changes — safe drop-in upgrade

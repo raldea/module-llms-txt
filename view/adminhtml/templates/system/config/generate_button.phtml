@@ -1,30 +1,49 @@
 <?php
 /**
- * Generate button — POST form with CSRF protection.
+ * Generate / Schedule buttons — POST with CSRF protection.
+ *
+ * NOTE: must NOT use <form> elements here. This template renders INSIDE the
+ * admin system-config form (#config-edit-form); nested forms are invalid HTML,
+ * get re-parented by the browser, and break jQuery.validate on Save
+ * ("Cannot read properties of undefined (reading 'settings')"). We POST via a
+ * dynamically-built form in JS instead.
  *
  * @var \Angeo\LlmsTxt\Block\Adminhtml\System\Config\GenerateButton $block
  */
 declare(strict_types=1);
 ?>
-<div class="angeo-llms-actions" style="display:flex; gap: 12px; align-items:center; flex-wrap: wrap;">
-    <form method="POST" action="<?= $block->escapeUrl($block->getGenerateNowUrl()) ?>" style="display:inline;">
-        <input type="hidden" name="form_key" value="<?= $block->escapeHtml($block->getFormKey()) ?>"/>
-        <button type="submit" class="action-default scalable primary">
-            <span><?= /* @noEscape */ __('Generate Now') ?></span>
-        </button>
-    </form>
+<div class="angeo-llms-actions" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <button type="button"
+            class="action-default scalable primary"
+            data-angeo-post-url="<?= $block->escapeUrl($block->getGenerateNowUrl()) ?>">
+        <span><?= $block->escapeHtml(__('Generate Now')) ?></span>
+    </button>
 
-    <form method="POST" action="<?= $block->escapeUrl($block->getScheduleUrl()) ?>" style="display:inline;">
-        <input type="hidden" name="form_key" value="<?= $block->escapeHtml($block->getFormKey()) ?>"/>
-        <button type="submit" class="action-default scalable">
-            <span><?= /* @noEscape */ __('Schedule (Async)') ?></span>
-        </button>
-    </form>
+    <button type="button"
+            class="action-default scalable"
+            data-angeo-post-url="<?= $block->escapeUrl($block->getScheduleUrl()) ?>">
+        <span><?= $block->escapeHtml(__('Schedule (Async)')) ?></span>
+    </button>
 
-    <p class="note" style="margin: 0;">
+    <p class="note" style="margin:0;">
         <span>
-            <?= /* @noEscape */ __('"Generate Now" runs synchronously — suitable for small/medium catalogs.') ?><br/>
-            <?= /* @noEscape */ __('"Schedule (Async)" queues an immediate cron run — recommended for large catalogs.') ?>
+            <?= $block->escapeHtml(__('"Generate Now" runs synchronously — suitable for small/medium catalogs.')) ?><br/>
+            <?= $block->escapeHtml(__('"Schedule (Async)" queues an immediate cron run — recommended for large catalogs.')) ?>
         </span>
     </p>
 </div>
+
+<script>
+require(['jquery'], function ($) {
+    'use strict';
+    var formKey = <?= /* @noEscape */ json_encode($block->getFormKey()) ?>;
+
+    $('.angeo-llms-actions [data-angeo-post-url]').on('click', function () {
+        var url = $(this).data('angeo-post-url'),
+            $form = $('<form>', {method: 'POST', action: url, style: 'display:none;'});
+
+        $form.append($('<input>', {type: 'hidden', name: 'form_key', value: formKey}));
+        $form.appendTo('body').trigger('submit');
+    });
+});
+</script>
