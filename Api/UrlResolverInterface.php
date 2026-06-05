@@ -55,6 +55,14 @@ interface UrlResolverInterface
     public function resolve(string $entityType, int $entityId, int $storeId): ?string;
 
     /**
+     * Return the absolute base URL for a store, including store code for non-default stores.
+     *
+     * @param int $storeId
+     * @return string
+     */
+    public function getBaseUrl(int $storeId): string;
+
+    /**
      * Clear the in-memory cache (call between stores).
      */
     public function reset(): void;

@@ -53,10 +53,11 @@
     <type name="Angeo\LlmsTxt\Model\Generator\LlmsTxtGenerator">
         <arguments>
             <argument name="providers" xsi:type="array">
-                <item name="store"    xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\StoreProvider</item>
-                <item name="category" xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\CategoryProvider</item>
-                <item name="cms"      xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\CmsPageProvider</item>
-                <item name="product"  xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\ProductProvider</item>
+                <item name="store"        xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\StoreProvider</item>
+                <item name="other_stores" xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\OtherStoresProvider</item>
+                <item name="category"     xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\CategoryProvider</item>
+                <item name="cms"          xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\CmsPageProvider</item>
+                <item name="product"      xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\ProductProvider</item>
             </argument>
         </arguments>
     </type>
@@ -65,10 +66,11 @@
     <type name="Angeo\LlmsTxt\Model\Generator\LlmsFullTxtGenerator">
         <arguments>
             <argument name="providers" xsi:type="array">
-                <item name="store"    xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\StoreProvider</item>
-                <item name="category" xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\CategoryProvider</item>
-                <item name="cms"      xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\CmsPageProvider</item>
-                <item name="product"  xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\ProductProvider</item>
+                <item name="store"        xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\StoreProvider</item>
+                <item name="other_stores" xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\OtherStoresProvider</item>
+                <item name="category"     xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\CategoryProvider</item>
+                <item name="cms"          xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\CmsPageProvider</item>
+                <item name="product"      xsi:type="object">Angeo\LlmsTxt\Model\Provider\Llms\ProductProvider</item>
             </argument>
         </arguments>
     </type>

@@ -54,7 +54,7 @@ class CmsPageProvider extends AbstractProvider
         if ($excluded !== []) {
             $pages->addFieldToFilter('identifier', ['nin' => $excluded]);
         }
-        $pages->addFieldToSelect(['title', 'identifier', 'content', 'content_heading']);
+        $pages->addFieldToSelect(['title', 'identifier', 'content', 'content_heading', 'meta_description']);
         $pages->setOrder('sort_order', 'ASC');
 
         $headerYielded = false;
@@ -78,24 +78,21 @@ class CmsPageProvider extends AbstractProvider
                 $headerYielded = true;
             }
 
-            $label = $this->escapeMarkdown($title);
             $rawContent = (string) $page->getContent();
+            $maxLength = $this->isFullTxt($context) ? self::CONTENT_MAX_FULL : self::EXCERPT_MAX_COMPACT;
+            $content = $this->sanitizer->sanitize(
+                (string) ($rawContent ?: $page->getMetaDescription()),
+                $context,
+                $maxLength
+            );
 
-            if ($this->isFullTxt($context)) {
-                $body = $this->sanitizer->sanitize($rawContent, $context, self::CONTENT_MAX_FULL);
-                yield "### {$label}\n\n";
-                yield "{$url}\n\n";
-                if ($body !== '') {
-                    yield $body . "\n\n";
-                }
-            } else {
-                $excerpt = $this->sanitizer->sanitize($rawContent, $context, self::EXCERPT_MAX_COMPACT);
-                $line = "- [{$label}]({$url})";
-                if ($excerpt !== '') {
-                    $line .= ': ' . $excerpt;
-                }
-                yield $line . "\n";
+            yield "### {$title}\n";
+            yield "URL: {$url}\n";
+            if ($content !== '') {
+                yield "Content: {$content}\n";
             }
+            yield "\n";
+
             $count++;
         }
 

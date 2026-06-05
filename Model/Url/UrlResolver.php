@@ -12,6 +12,7 @@ use Angeo\LlmsTxt\Api\UrlResolverInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\UrlRewrite\Model\UrlRewrite;
 
 /**
@@ -40,7 +41,8 @@ class UrlResolver implements UrlResolverInterface
 
     public function __construct(
         private readonly ResourceConnection $resourceConnection,
-        private readonly StoreRepositoryInterface $storeRepository
+        private readonly StoreRepositoryInterface $storeRepository,
+        private readonly StoreManagerInterface $storeManager
     ) {
     }
 
@@ -102,6 +104,14 @@ class UrlResolver implements UrlResolverInterface
         return $this->baseUrls[$storeId] . '/' . ltrim($path, '/');
     }
 
+    public function getBaseUrl(int $storeId): string
+    {
+        if (!isset($this->baseUrls[$storeId])) {
+            $this->baseUrls[$storeId] = $this->resolveBaseUrl($storeId);
+        }
+        return $this->baseUrls[$storeId];
+    }
+
     public function reset(): void
     {
         $this->cache = [];
@@ -112,7 +122,16 @@ class UrlResolver implements UrlResolverInterface
     {
         try {
             $store = $this->storeRepository->getById($storeId);
-            return rtrim((string) $store->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_WEB), '/');
+            $base  = rtrim((string) $store->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_WEB), '/');
+
+            $defaultStore   = $this->storeManager->getDefaultStoreView();
+            $defaultStoreId = $defaultStore ? (int) $defaultStore->getId() : null;
+
+            if ($storeId !== $defaultStoreId) {
+                $base .= '/' . $store->getCode();
+            }
+
+            return $base;
         } catch (\Throwable) {
             return '';
         }

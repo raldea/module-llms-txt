@@ -11,6 +11,7 @@ namespace Angeo\LlmsTxt\Model\Provider\Llms;
 use Angeo\LlmsTxt\Api\OutputContextInterface;
 use Angeo\LlmsTxt\Model\Config;
 use Angeo\LlmsTxt\Model\Provider\AbstractProvider;
+use Magento\Directory\Model\CountryFactory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 
@@ -38,38 +39,37 @@ use Magento\Store\Model\ScopeInterface;
  */
 class StoreProvider extends AbstractProvider
 {
-    private const XML_PATH_META_DESCRIPTION = 'design/head/default_description';
+    private const XML_PATH_META_DESCRIPTION  = 'design/head/default_description';
+    private const XML_PATH_DEFAULT_COUNTRY   = 'general/country/default';
 
     public function __construct(
         private readonly Config $config,
-        private readonly ScopeConfigInterface $scopeConfig
+        private readonly ScopeConfigInterface $scopeConfig,
+        private readonly CountryFactory $countryFactory
     ) {
     }
 
     public function provide(OutputContextInterface $context): iterable
     {
-        $store = $context->getStore();
-
-        $name = $store->getName();
+        $store       = $context->getStore();
+        $storeName   = $store->getName();
+        $websiteName = $store->getWebsite()->getName();
+        $locale      = str_replace('-', '_', $context->getLocaleCode());
+        $currency    = $context->getCurrencyCode();
+        $countryCode = (string) $this->scopeConfig->getValue(
+            self::XML_PATH_DEFAULT_COUNTRY,
+            ScopeInterface::SCOPE_STORE,
+            $store->getId()
+        );
+        $country     = $this->countryFactory->create()->loadByCode($countryCode)->getName() ?: $countryCode;
 
         // 1. Title — H1 (required by spec)
-        yield "# {$name}\n\n";
+        yield "# LLMs.txt - {$websiteName} - {$storeName} \n\n";
 
-        // 2. Summary — single blockquote (required by spec)
-        $summary = $this->resolveSummary($context);
-        yield "> {$summary}\n\n";
-
-        // 3. Optional metadata paragraph (plain markdown, not a blockquote)
-        $base   = $context->getBaseUrl();
-        $locale = $context->getLocaleCode();
-        $currency = $context->getCurrencyCode();
-
-        yield sprintf(
-            "Base URL: %s · Currency: %s · Locale: %s\n\n",
-            $base,
-            $currency,
-            $locale
-        );
+        // 2. Metadata blockquotes
+        yield "> Store: {$websiteName} - {$storeName}\n";
+        yield "> Country: {$country}\n";
+        yield "> Currency: {$currency}\n\n";
     }
 
     private function resolveSummary(OutputContextInterface $context): string

@@ -28,30 +28,12 @@ class HtmlFilter implements SanitizerFilterInterface
             return '';
         }
 
-        // <br>, </p>, </div> → newline before strip_tags so paragraph structure survives.
-        $content = preg_replace(
-            '#</?(?:br|p|div|li|h[1-6]|tr|blockquote)\s*/?\s*>#i',
-            "\n",
-            $content
-        ) ?? $content;
-
-        // <script> and <style> blocks — keep contents OUT of the output.
-        $content = preg_replace('#<(script|style)[^>]*>.*?</\1>#is', '', $content) ?? $content;
-
-        // <!-- comments --> — Page Builder leaves a lot of these.
-        $content = preg_replace('/<!--.*?-->/s', '', $content) ?? $content;
-
-        $content = strip_tags($content);
-
-        // Decode HTML entities (&amp; &nbsp; &#39; etc.)
         $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $content = preg_replace('/<style[^>]*>.*?<\/style>/is', ' ', $content) ?? $content;
+        $content = strip_tags($content);
+        $content = preg_replace(['/\{\{.*?\}\}/s', '/\[.*?\]/s'], ' ', $content) ?? $content;
+        $content = str_replace(['#html-body', '&nbsp;'], ['', ' '], $content);
 
-        // Collapse runs of whitespace, but preserve single newlines as paragraph hints.
-        $content = preg_replace('/[ \t\x{00A0}]+/u', ' ', $content) ?? $content;
-        $content = preg_replace('/\n{3,}/', "\n\n", $content) ?? $content;
-
-        // Trim each line; drop empty lines at start/end.
-        $lines = array_map('trim', explode("\n", $content));
-        return trim(implode("\n", $lines));
+        return trim((string) preg_replace('/\s+/', ' ', $content));
     }
 }

@@ -140,52 +140,29 @@ class ProductProvider extends AbstractProvider
         string $url,
         OutputContextInterface $context
     ): string {
-        $name  = $this->escapeMarkdown(trim((string) $product->getName()));
+        $name = trim((string) $product->getName());
+        $sku = trim((string) $product->getSku());
         $price = $this->resolvePrice($product, $context);
-        $store = $context->getStore();
+        $inStock = $this->isInStock($product, (int) $context->getStore()->getId());
+        $maxLen = $this->isFullTxt($context) ? self::DESC_MAX_FULL : self::DESC_MAX_COMPACT;
+        $rawDesc = (string) ($product->getShortDescription() ?: $product->getDescription());
+        $desc = $this->sanitizer->sanitize($rawDesc, $context, $maxLen);
 
-        if ($this->isFullTxt($context)) {
-            $short = $this->sanitizer->sanitize(
-                (string) $product->getShortDescription(),
-                $context,
-                self::DESC_MAX_FULL
-            );
-            $desc = $this->sanitizer->sanitize(
-                (string) $product->getDescription(),
-                $context,
-                self::DESC_MAX_FULL
-            );
-            $out = "### {$name}\n\n{$url}\n\n";
-            if ($price !== null) {
-                $out .= sprintf("Price: %s %s\n\n", $price, $context->getCurrencyCode());
-            }
-            if ($short !== '') {
-                $out .= $short . "\n\n";
-            }
-            if ($desc !== '' && $desc !== $short) {
-                $out .= $desc . "\n\n";
-            }
-            return $out;
+        $out = "### {$name}\n";
+        if ($sku !== '') {
+            $out .= "SKU: {$sku}\n";
         }
-
-        // Compact mode (llms.txt)
-        $shortDesc = $this->sanitizer->sanitize(
-            (string) $product->getShortDescription(),
-            $context,
-            self::DESC_MAX_COMPACT
-        );
-        $line = "- [{$name}]({$url})";
-        $parts = [];
-        if ($shortDesc !== '') {
-            $parts[] = $shortDesc;
-        }
+        $out .= "URL: {$url}\n";
         if ($price !== null) {
-            $parts[] = sprintf('%s %s', $price, $context->getCurrencyCode());
+            $out .= sprintf("Price: %s %s\n", $price, $context->getCurrencyCode());
         }
-        if ($parts !== []) {
-            $line .= ': ' . implode(' — ', $parts);
+        $out .= 'In Stock: ' . ($inStock ? 'Yes' : 'No') . "\n";
+        if ($desc !== '') {
+            $out .= "Description: {$desc}\n";
         }
-        return $line . "\n";
+        $out .= "\n";
+
+        return $out;
     }
 
     private function resolvePrice(

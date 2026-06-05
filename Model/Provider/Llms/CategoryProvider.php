@@ -14,6 +14,8 @@ use Angeo\LlmsTxt\Api\UrlResolverInterface;
 use Angeo\LlmsTxt\Model\Config;
 use Angeo\LlmsTxt\Model\Provider\AbstractProvider;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
  * Emits the `## Categories` section for llms.txt / llms-full.txt.
@@ -41,6 +43,12 @@ class CategoryProvider extends AbstractProvider
         return $this->config->isCategoriesIncluded($context->getStore());
     }
 
+    /**
+     * @param OutputContextInterface $context
+     * @return iterable
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
+     */
     public function provide(OutputContextInterface $context): iterable
     {
         $store = $context->getStore();
@@ -49,13 +57,16 @@ class CategoryProvider extends AbstractProvider
 
         $collection = $this->categoryCollectionFactory->create();
         $collection->setStoreId($storeId);
-        $collection->addAttributeToSelect(['name', 'description', 'url_key']);
+        $collection->addAttributeToSelect(['name', 'description', 'meta_description', 'url_key', 'path']);
         $collection->addAttributeToFilter('is_active', 1);
-        $collection->addAttributeToFilter(
-            'path',
-            ['like' => '1/' . $rootCategoryId . '/%']
-        );
+        $collection->addAttributeToFilter('path', ['like' => '1/' . $rootCategoryId . '/%']);
+        $collection->setLoadProductCount(true);
         $collection->setOrder('position', 'ASC');
+
+        $nameMap = [];
+        foreach ($collection as $cat) {
+            $nameMap[(int) $cat->getId()] = trim((string) $cat->getName());
+        }
 
         $headerYielded = false;
         $count = 0;
@@ -72,7 +83,6 @@ class CategoryProvider extends AbstractProvider
                 $storeId
             );
             if ($url === null) {
-                // No URL rewrite — skip rather than emit a broken link.
                 continue;
             }
 
@@ -81,24 +91,25 @@ class CategoryProvider extends AbstractProvider
                 $headerYielded = true;
             }
 
-            $label = $this->escapeMarkdown($name);
-            $rawDesc = (string) $category->getDescription();
+            $rawDesc = (string) ($category->getDescription() ?: $category->getMetaDescription());
+            $desc = $this->sanitizer->sanitize(
+                $rawDesc,
+                $context,
+                $this->isFullTxt($context) ? self::DESC_MAX_FULL : self::DESC_MAX_COMPACT
+            );
 
-            if ($this->isFullTxt($context)) {
-                $body = $this->sanitizer->sanitize($rawDesc, $context, self::DESC_MAX_FULL);
-                yield "### {$label}\n\n";
-                yield "{$url}\n\n";
-                if ($body !== '') {
-                    yield $body . "\n\n";
-                }
-            } else {
-                $desc = $this->sanitizer->sanitize($rawDesc, $context, self::DESC_MAX_COMPACT);
-                $line = "- [{$label}]({$url})";
-                if ($desc !== '') {
-                    $line .= ': ' . $desc;
-                }
-                yield $line . "\n";
+            $path = $this->buildPath((string) $category->getPath(), $nameMap, $rootCategoryId);
+            $productCount = (int) $category->getProductCount();
+
+            yield "### {$name}\n";
+            yield "Path: {$path}\n";
+            yield "URL: {$url}\n";
+            yield "Product Count: {$productCount}\n";
+            if ($desc !== '') {
+                yield "Description: {$desc}\n";
             }
+            yield "\n";
+
             $count++;
         }
 
@@ -107,5 +118,24 @@ class CategoryProvider extends AbstractProvider
         }
 
         $context->setShared('category_count', $count);
+    }
+
+    /**
+     * @param string $pathStr
+     * @param array $nameMap
+     * @param int $rootCategoryId
+     * @return string
+     */
+    private function buildPath(string $pathStr, array $nameMap, int $rootCategoryId): string
+    {
+        $parts = [];
+        foreach (explode('/', $pathStr) as $id) {
+            $id = (int) $id;
+            if ($id <= 1 || $id === $rootCategoryId) {
+                continue;
+            }
+            $parts[] = $nameMap[$id] ?? $id;
+        }
+        return implode(' > ', $parts);
     }
 }
