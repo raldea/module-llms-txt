@@ -70,6 +70,10 @@ class StoreProvider extends AbstractProvider
         yield "> Store: {$websiteName} - {$storeName}\n";
         yield "> Country: {$country}\n";
         yield "> Currency: {$currency}\n\n";
+
+        // 3. Store summary — merchant override → meta description → generic fallback
+        $summary = $this->resolveSummary($context);
+        yield "> {$summary}\n\n";
     }
 
     private function resolveSummary(OutputContextInterface $context): string
